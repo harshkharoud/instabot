@@ -1,4 +1,8 @@
 import requests,urllib
+from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
+
+#Sandbox user's: vivek_shivam, manparveshsandhu, akashdeep_gill.
 
 APP_ACCESS_TOKEN = '672364325.e2145dd.524319b348584aec8229a023ca106d37'
 BASE_URL = 'https://api.instagram.com/v1/'
@@ -156,39 +160,180 @@ def post_a_comment(insta_username):
         print "Unable to add comment. Try again!"
 
 
+#Deleting negative comments.
+
+    def delete_negative_comment(insta_username):
+        media_id = get_post_id(insta_username)
+        request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, AS)
+        print 'GET request url : %s' % (request_url)
+        comment_info = requests.get(request_url).json()
+
+        if comment_info['meta']['code'] == 200:
+            if len(comment_info['data']):
+                for x in range(0, len(comment_info['data'])):
+                    comment_id = comment_info['data'][x]['id']
+                    comment_text = comment_info['data'][x]['text']
+                    blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
+                    if (blob.sentiment.p_neg > blob.sentiment.p_pos):
+                        print 'Negative comment : %s' % (comment_text)
+                        delete_url = (BASE_URL + 'media/%s/comments/%s/?access_token=%s') % (media_id, comment_id, AS)
+                        print 'DELETE request url : %s' % (delete_url)
+                        delete_info = requests.delete(delete_url).json()
+
+                        if delete_info['meta']['code'] == 200:
+                            print 'Comment successfully deleted!\n'
+                        else:
+                            print 'Unable to delete comment!'
+                    else:
+                        print 'Positive comment : %s\n' % (comment_text)
+            else:
+                print 'There are no existing comments on the post!'
+        else:
+            print 'Status code other than 200 received!'
+
+
+
+#Targeted comment based on caption.
+
+
+def targeted_comment(insta_username):
+    user_id = get_user_id(insta_username)
+    request_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, AS)
+    print 'GET request url : %s' % (request_url)
+    caption_info = requests.get(request_url).json()
+
+    if caption_info['meta']['code'] == 200:
+
+        if len(caption_info['data']):
+
+            for y in range(0, len(caption_info['data'])):
+
+                caption_text = caption_info['data'][y]['caption']['text']
+                caption = caption_text.split(" ")
+                if 'food' in caption:
+
+                    print 'Read Caption: %s' % (caption)
+                    media_id = get_post_id(insta_username)
+                    comment_text = "www.nikbakers.com"
+                    payload = {"access_token": AS, "text": comment_text}
+                    request_url = (BASE_URL + 'media/%s/comments') % (media_id)
+                    print 'POST request url : %s' % (request_url)
+
+                    make_comment = requests.post(request_url, payload).json()
+
+                    if make_comment['meta']['code'] == 200:
+                        print "Successfully Posted Targetted Comment!"
+                    else:
+                        print "Unable to add comment. Try again!"
+                else:
+                    print 'There is no caption on the post!'
+
+    else:
+
+        print 'Status code other than 200 received!'
+        exit()
+
+
 
 def start_bot():
     while True:
         print '\n'
         print 'Hey! Welcome to instaBot!'
         print 'Here are your menu options:'
-        print "a.Get your own details"
-        print "b.Get details of a user by username"
-        print "c.Get your own recent post"
-        print "d.Get the recent post of a user by username"
-        print "e.Like the recent post of a user"
-        print "f.Make a comment on the recent post of a user"
-        print "g.Exit"
+        print "a.Get your own details\n"
+        print "b.Get details of a user by username\n"
+        print "c.Get your own recent post\n"
+        print "d.Get the recent post of a user by username\n"
+        print "e.Get recent media liked by the user\n"
+        print "f.Like the recent post of a user\n"
+        print "g.Get a list of comments on the recent post of a user\n"
+        print "h.Make a comment on the recent post of a user\n"
+        print "i.Delete negative comments from the recent post of a user\n"
+        print "j.Target comment on posts based on caption\n"
+        print "k.Target comment on posts based on hashtag\n"
+        print "l.Target comment on posts based on location\n"
+        print "i.Exit\n"
 
         choice = raw_input("Enter you choice: ")
         if choice == "a":
             self_info()
         elif choice == "b":
             insta_username = raw_input("Enter the username of the user: ")
+            if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+                print "Invalid entry. Please enter a Valid Name!"
+                insta_username = raw_input("Enter the username: ")
+            else:
+                print "That's a valid friend name"
             get_user_info(insta_username)
         elif choice == "c":
             get_own_post()
         elif choice == "d":
             insta_username = raw_input("Enter the username of the user: ")
+            if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+                print "Invalid entry. Please enter a Valid Name!"
+                insta_username = raw_input("Enter the username: ")
+            else:
+                print "That's a valid friend name"
             get_user_post(insta_username)
-        elif choice == "e":
+        elif choice=="e":
+           recent_like()
+        elif choice=="f":
+            insta_username = raw_input("Enter the username of the user: ")
+            if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+                print "Invalid entry. Please enter a Valid Name!"
+                insta_username = raw_input("Enter the username: ")
+            else:
+                print "That's a valid friend name"
+            like_a_post(insta_username)
+            insta_username = raw_input("Enter the username of the user: ")
+            if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+                print "Invalid entry. Please enter a Valid Name!"
+                insta_username = raw_input("Enter the username: ")
+            else:
+                print "That's a valid friend name"
+        elif choice=="g":
            insta_username = raw_input("Enter the username of the user: ")
-           like_a_post(insta_username)
-        elif choice == "f":
+           if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+               print "Invalid entry. Please enter a Valid Name!"
+               insta_username = raw_input("Enter the username: ")
+           else:
+               print "That's a valid friend name"
+           get_comment_list(insta_username)
+           if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+               print "Invalid entry. Please enter a Valid Name!"
+               insta_username = raw_input("Enter the username: ")
+           else:
+               print "That's a valid friend name"
+        elif choice=="h":
            insta_username = raw_input("Enter the username of the user: ")
+           if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+               print "Invalid entry. Please enter a Valid Name!"
+               insta_username = raw_input("Enter the username: ")
+           else:
+               print "That's a valid friend name"
            post_a_comment(insta_username)
-        elif choice == "g":
-            exit()
+        elif choice=="i":
+           insta_username = raw_input("Enter the username of the user: ")
+           if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+               print "Invalid entry. Please enter a Valid Name!"
+               insta_username = raw_input("Enter the username: ")
+           else:
+               print "That's a valid friend name"
+           delete_negative_comment(insta_username)
+        elif choice == "j":
+           insta_username=raw_input("Enter the username of the user: ")
+           if set('[~!@#$%^&*()+{}":;\']" "').intersection(insta_username):
+               print "Invalid entry. Please enter a Valid Name!"
+               insta_username = raw_input("Enter the username: ")
+           else:
+               print "That's a valid friend name"
+           target_caption_comments(insta_username)
+        elif choice=="k":
+            target_hashtag_comments()
+        elif choice=="l":
+            target_location_comments()
+        elif choice=="i":
+             exit()
         else:
             print "wrong choice"
 
