@@ -40,7 +40,7 @@ def get_user_id(insta_username):
             return None
     else:
         print 'Status code other than 200 received!'
-        exit()
+
 
 
 #Getting other User's info.
@@ -67,6 +67,7 @@ def get_user_info(insta_username):
 
 
 
+
 #Downloading own recent post.
 
 def get_own_post():
@@ -84,6 +85,7 @@ def get_own_post():
             print 'Post does not exist!'
     else:
         print 'Status code other than 200 received!'
+
 
 
 #Downloading user's recent post.
@@ -109,6 +111,7 @@ def get_user_post(insta_username):
         print 'Status code other than 200 received!'
 
 
+
 #Getting post ID.
 
 def get_post_id(insta_username):
@@ -128,7 +131,7 @@ def get_post_id(insta_username):
             exit()
     else:
         print 'Status code other than 200 received!'
-        exit()
+
 
 
 #Liking a user's post.
@@ -143,6 +146,7 @@ def like_a_post(insta_username):
         print 'Like was successful!'
     else:
         print 'Your like was unsuccessful. Try again!'
+
 
 
 #Getting list of likes.
@@ -204,23 +208,25 @@ def post_a_comment(insta_username):
         print "Unable to add comment. Try again!"
 
 
+
 #Deleting negative comments.
 
 def delete_negative_comment(insta_username):
     media_id = get_post_id(insta_username)
-    request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (user_id, APP_ACCESS_TOKEN)
+    request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, APP_ACCESS_TOKEN)
     print 'GET request url : %s' % (request_url)
     comment_info = requests.get(request_url).json()
 
     if comment_info['meta']['code'] == 200:
         if len(comment_info['data']):
+            #Here's a naive implementation of how to delete the negative comments :)
             for x in range(0, len(comment_info['data'])):
                 comment_id = comment_info['data'][x]['id']
                 comment_text = comment_info['data'][x]['text']
                 blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
                 if (blob.sentiment.p_neg > blob.sentiment.p_pos):
                     print 'Negative comment : %s' % (comment_text)
-                    delete_url = (BASE_URL + 'media/%s/comments/%s/?access_token=%s') % (user_id, comment_id, APP_ACCESS_TOKEN)
+                    delete_url = (BASE_URL + 'media/%s/comments/%s/?access_token=%s') % (media_id, comment_id, APP_ACCESS_TOKEN)
                     print 'DELETE request url : %s' % (delete_url)
                     delete_info = requests.delete(delete_url).json()
 
@@ -251,14 +257,14 @@ def targeted_comment(insta_username):
 
             for y in range(0, len(caption_info['data'])):
 
-                caption_text = caption_info['data'][y]['caption']['text']
+                caption_text = str(caption_info['data'][y]['caption'])
                 caption = caption_text.split(" ")
                 if 'food' in caption:
 
                     print 'Read Caption: %s' % (caption)
                     media_id = get_post_id(insta_username)
-                    comment_text = "www.nikbakers.com"
-                    payload = {"access_token": AS, "text": comment_text}
+                    comment_text = "www.nikbakers.com "
+                    payload = {"access_token": APP_ACCESS_TOKEN, "text": comment_text}
                     request_url = (BASE_URL + 'media/%s/comments') % (media_id)
                     print 'POST request url : %s' % (request_url)
 
